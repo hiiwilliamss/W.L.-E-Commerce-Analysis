@@ -1,0 +1,162 @@
+---
+title: "Customer Behavior (E-commerce) Analysis"
+author: "William L."
+format: 
+  html:
+    self-contained: True
+---
+
+##### WD: setwd("/Users/williamlorenzo/Desktop/E-commerce Analysis in R")
+
+## Background
+
+Understanding customer behavior in e-commerce is crucial because it allows businesses to tailor their strategies to meet customer needs and preferences, ultimately driving sales and improving customer satisfaction.
+
+## Loading data
+
+```{r}
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(GGally)
+
+data <- read.csv("E-commerce.csv")
+```
+
+#### Inspection of dataset structure
+
+```{r}
+str(data)
+```
+
+#### Summary of dataset
+
+```{r}
+summary(data)
+```
+
+## Data Cleaning
+
+I will conduct missing values and outliers
+
+#### Handle missing value
+
+```{r}
+data <- data %>%
+  mutate(across(everything(), ~replace_na(.x, median(.x, na.rm = TRUE))))
+```
+
+#### Correct data types
+
+```{r}
+data$Age <- as.numeric(data$Age)
+data$Annual.Income <- as.numeric(gsub("[^0-9]", "", data$Annual.Income))
+data$Time.on.Site <- as.numeric(data$Time.on.Site)
+```
+
+#### Duplicate detection
+
+```{r}
+data <- data[!duplicated(data$Customer.ID), ]
+```
+
+#### Process of purchase history
+
+Upon analyzing the process of purchase history, I have the ability to analyze how many purchases each customer has made. 
+
+This is crucial for understanding customer behavior, segmenting customers based on their purchase frequency, and tailoring marketing strategies accordingly.
+```{r}
+data$Purchase.Count <- sapply(data$Purchase.History, function(x) length(strsplit(as.character(x), ",")[[1]]))
+
+head(data)
+```
+
+## Descriptive Statistics
+
+#### Summary statistics for numerical features
+
+```{r}
+summary(data$Age)
+summary(data$Annual.Income)
+summary(data$Time.on.Site)
+```
+
+#### Freq. dist. for categorical features
+
+```{r}
+table(data$Gender)
+table(data$Location)
+table(data$Product.Category)
+```
+
+#### Numerical Data using Histograms
+
+In order to analyze numerical data, I have created two histograms using `ggplot()` to furhter visualize the distributions of `Age` and `Annual.Income` in my dataset.
+
+```{r}
+ggplot(data, aes(x = Age)) +
+  geom_histogram(binwidth = 5,
+                 fill = "blue",
+                 color = "black") +
+  ggtitle("Age Distribution")
+
+ggplot(data, aes(x = Annual.Income)) +
+  geom_histogram(binwidth = 10000, fill = "purple", color = "black") +
+  ggtitle("Income Distribution")
+```
+
+#### Boxplot for Time on Site
+
+Boxplot visualization to portray the distributions of `Gender` and `Location`.
+
+```{r}
+ggplot(data, aes(x = Gender)) +
+  geom_bar(fill = "lavender") +
+  ggtitle("Gender Distribution")
+
+ggplot(data, aes(x = Location)) +
+  geom_bar(fill = "lightblue") +
+  ggtitle("Location Distribution")
+
+```
+
+#### Heatmap for Correlation Matrix
+
+`heatmap()` visualizes the correlation matrix of the numeric variables
+
+  - The strength and direction of linear relationships between pairs of numeric variables
+  
+  - Identify which variables are strongly correlated (positively or negatively)
+
+```{r}
+cor_matrix <- cor(data[, sapply(data, is.numeric)])
+heatmap(cor_matrix, symm = T, col = heat.colors(256), main = "Correlation Heatmap")
+```
+
+## Data Visualization
+
+#### Visualizing the Data to portray trends
+
+I will begin pairing plots to depict relationships between all numerical features
+
+```{r}
+ggpairs(data[, sapply(data, is.numeric)], title = "Pair Plot of Numerical Features")
+```
+
+#### Comparison of distributions by gender
+
+```{r}
+ggplot(data, aes(x = Annual.Income, fill = Gender)) +
+  geom_density(alpha = 0.5) +
+  ggtitle("Income Distribution by Gender")
+```
+
+#### Time on Site v. Purchase Count
+
+```{r}
+ggplot(data, aes(x = Time.on.Site, y = Purchase.Count)) +
+  geom_point(color = "lightblue") +
+  geom_smooth(method = "lm", color = "blue") +
+  ggtitle("Time on Site vs. Purchase Count")
+```
+
